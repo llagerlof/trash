@@ -23,7 +23,7 @@ add_suffix_before_extension() {
 # Main script starts here
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
     echo "Trash 1.1.1"
-    echo "Usage: $0 <source> [destination_directory]"
+    echo "Usage: $0 <source> [destination_directory|~/.trash]"
     exit 1
 fi
 
