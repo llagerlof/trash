@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Function to add a suffix before the file extension
+add_suffix_before_extension() {
+    local filename=$1
+    local suffix=$2
+    extension="${filename##*.}"
+    filename="${filename%.*}"
+    if [ "$filename" = "$extension" ]; then
+        # The file does not have an extension
+        echo "${filename}-${suffix}"
+    else
+        # The file has an extension
+        echo "${filename}-${suffix}.${extension}"
+    fi
+}
+
+# Main script starts here
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <source> <destination_directory>"
+    exit 1
+fi
+
+src=$1
+dest=$2
+
+# Check if destination directory exists
+if [ ! -d "$dest" ]; then
+    echo "Destination directory does not exist."
+    exit 1
+fi
+
+# Check if the source is a file or a directory
+if [ -f "$src" ]; then
+    base=$(basename "$src")
+    new_dest_path="$dest/$base"
+
+    # If a file with the same name exists, find a new name
+    count=2
+    while [ -f "$new_dest_path" ]; do
+        new_base=$(add_suffix_before_extension "$base" "$count")
+        new_dest_path="$dest/$new_base"
+        ((count++))
+    done
+
+    mv "$src" "$new_dest_path"
+
+elif [ -d "$src" ]; then
+    base=$(basename "$src")
+    new_dest_path="$dest/$base"
+
+    # If a directory with the same name exists, find a new name
+    count=2
+    while [ -d "$new_dest_path" ]; do
+        new_dest_path="$dest/${base}-${count}"
+        ((count++))
+    done
+
+    mv "$src" "$new_dest_path"
+
+else
+    echo "The source is neither a file nor a directory."
+    exit 1
+fi
+
+echo "Moved to $new_dest_path"
+
