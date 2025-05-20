@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# Trash 1.1.1
+# Trash 1.3.0
 #
 # A script that safely moves files and directories to a destination folder
 # without overwriting existing items.
+# Supports multiple files or directories as arguments.
 
 # Function to add a suffix before the file extension
 add_suffix_before_extension() {
@@ -21,22 +22,55 @@ add_suffix_before_extension() {
 }
 
 # Main script starts here
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-    echo "Trash 1.1.1"
-    echo "Usage: $0 <source> [destination_directory|~/.trash]"
+# Process the arguments
+if [ "$#" -lt 1 ]; then
+    echo "Trash 1.3.0"
+    echo "Usage: $0 <source1> [source2...] [-d destination_directory]"
+    echo "  Options:"
+    echo "    -d DIR  Specify destination directory (default: ~/.trash)"
     exit 1
 fi
 
-src=$1
-if [ "$#" -eq 2 ]; then
-    dest=$2
-else
-    # Use ~/.trash as default destination
-    dest="${HOME}/.trash"
-    # Create the default trash directory if it doesn't exist
-    if [ ! -d "$dest" ]; then
+# Parse arguments
+dest="${HOME}/.trash"  # Default destination
+sources=()
+i=1
+
+while [ $i -le $# ]; do
+    arg="${!i}"
+    
+    if [ "$arg" = "-d" ]; then
+        # Next argument should be the destination directory
+        ((i++))
+        if [ $i -le $# ]; then
+            dest="${!i}"
+        else
+            echo "Error: -d option requires a directory argument"
+            exit 1
+        fi
+    else
+        # Add to sources array
+        sources+=("$arg")
+    fi
+    ((i++))
+done
+
+# Check if we have any sources to process
+if [ ${#sources[@]} -eq 0 ]; then
+    echo "Error: No source files or directories specified"
+    echo "Usage: $0 <source1> [source2...] [-d destination_directory]"
+    exit 1
+fi
+
+# Create or validate destination directory
+if [ ! -d "$dest" ]; then
+    # Check if it's the default directory that needs to be created
+    if [ "$dest" = "${HOME}/.trash" ]; then
         mkdir -p "$dest"
         echo "Created default trash directory at $dest"
+    else
+        echo "Error: Destination directory '$dest' does not exist"
+        exit 1
     fi
 fi
 
@@ -46,38 +80,79 @@ if [ ! -d "$dest" ]; then
     exit 1
 fi
 
-# Check if the source is a file or a directory
-if [ -f "$src" ]; then
-    base=$(basename "$src")
-    new_dest_path="$dest/$base"
+# Function to process one source (file or directory)
+process_source() {
+    local src="$1"
+    local dest="$2"
+    
+    # Check if the source exists and is a file or a directory
+    if [ ! -e "$src" ]; then
+        echo "Error: '$src' does not exist."
+        return 1
+    fi
+    
+    if [ -f "$src" ]; then
+        base=$(basename "$src")
+        new_dest_path="$dest/$base"
+        
+        # If a file or directory with the same name exists, find a new name
+        count=2
+        while [ -e "$new_dest_path" ]; do
+            new_base=$(add_suffix_before_extension "$base" "$count")
+            new_dest_path="$dest/$new_base"
+            ((count++))
+        done
+        
+        if mv "$src" "$new_dest_path"; then
+            echo "Moved file '$src' to $new_dest_path"
+            return 0
+        else
+            echo "Error moving file '$src'"
+            return 1
+        fi
+        
+    elif [ -d "$src" ]; then
+        base=$(basename "$src")
+        new_dest_path="$dest/$base"
+        
+        # If a file or directory with the same name exists, find a new name
+        count=2
+        while [ -e "$new_dest_path" ]; do
+            new_dest_path="$dest/${base}-${count}"
+            ((count++))
+        done
+        
+        if mv "$src" "$new_dest_path"; then
+            echo "Moved directory '$src' to $new_dest_path"
+            return 0
+        else
+            echo "Error moving directory '$src'"
+            return 1
+        fi
+        
+    else
+        echo "Error: '$src' is neither a file nor a directory."
+        return 1
+    fi
+}
 
-    # If a file or directory with the same name exists, find a new name
-    count=2
-    while [ -e "$new_dest_path" ]; do
-        new_base=$(add_suffix_before_extension "$base" "$count")
-        new_dest_path="$dest/$new_base"
-        ((count++))
-    done
+# Process each source
+success_count=0
+failure_count=0
 
-    mv "$src" "$new_dest_path"
+for src in "${sources[@]}"; do
+    if process_source "$src" "$dest"; then
+        ((success_count++))
+    else
+        ((failure_count++))
+    fi
+done
 
-elif [ -d "$src" ]; then
-    base=$(basename "$src")
-    new_dest_path="$dest/$base"
-
-    # If a file or directory with the same name exists, find a new name
-    count=2
-    while [ -e "$new_dest_path" ]; do
-        new_dest_path="$dest/${base}-${count}"
-        ((count++))
-    done
-
-    mv "$src" "$new_dest_path"
-
-else
-    echo "The source is neither a file nor a directory."
-    exit 1
+# Print summary
+echo "-----------------------------------"
+echo "Operation Summary:"
+echo "  $success_count items moved successfully"
+if [ $failure_count -gt 0 ]; then
+    echo "  $failure_count items failed to move"
 fi
-
-echo "Moved to $new_dest_path"
 
