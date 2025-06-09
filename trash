@@ -1,6 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+trap 'echo "Error on line $LINENO" >&2; exit 1' ERR
 
-# Trash 1.3.0
+# Trash 1.4.0
 #
 # A script that safely moves files and directories to a destination folder
 # without overwriting existing items.
@@ -8,23 +10,29 @@
 
 # Function to add a suffix before the file extension
 add_suffix_before_extension() {
-    local filename=$1
-    local suffix=$2
-    extension="${filename##*.}"
-    filename="${filename%.*}"
-    if [ "$filename" = "$extension" ]; then
-        # The file does not have an extension
+    local filename="$1"
+    local suffix="$2"
+
+    # Handle files that start with a dot but have no other extension
+    if [[ $filename == .* && $filename != *.* ]]; then
+        echo "${filename}-${suffix}"
+        return
+    fi
+
+    local base="${filename%.*}"
+    local ext="${filename##*.}"
+
+    if [[ $base == "$filename" ]]; then
         echo "${filename}-${suffix}"
     else
-        # The file has an extension
-        echo "${filename}-${suffix}.${extension}"
+        echo "${base}-${suffix}.${ext}"
     fi
 }
 
 # Main script starts here
 # Process the arguments
 if [ "$#" -lt 1 ]; then
-    echo "Trash 1.3.0"
+    echo "Trash 1.4.0"
     echo "Usage: $0 <source1> [source2...] [-d destination_directory]"
     echo "  Options:"
     echo "    -d DIR  Specify destination directory (default: ~/.trash)"
@@ -66,17 +74,21 @@ fi
 if [ ! -d "$dest" ]; then
     # Check if it's the default directory that needs to be created
     if [ "$dest" = "${HOME}/.trash" ]; then
-        mkdir -p "$dest"
-        echo "Created default trash directory at $dest"
+        if mkdir -p "$dest"; then
+            echo "Created default trash directory at $dest"
+        else
+            echo "Error: Failed to create default trash directory '$dest'" >&2
+            exit 1
+        fi
     else
-        echo "Error: Destination directory '$dest' does not exist"
+        echo "Error: Destination directory '$dest' does not exist" >&2
         exit 1
     fi
 fi
 
-# Check if destination directory exists
-if [ ! -d "$dest" ]; then
-    echo "Destination directory does not exist."
+# Ensure the destination directory is writable
+if [ ! -w "$dest" ]; then
+    echo "Error: Destination directory '$dest' is not writable" >&2
     exit 1
 fi
 
@@ -84,6 +96,9 @@ fi
 process_source() {
     local src="$1"
     local dest="$2"
+    local base
+    local new_dest_path
+    local count
     
     # Check if the source exists and is a file or a directory
     if [ ! -e "$src" ]; then
@@ -92,7 +107,7 @@ process_source() {
     fi
     
     if [ -f "$src" ]; then
-        base=$(basename "$src")
+        base=$(basename -- "$src")
         new_dest_path="$dest/$base"
         
         # If a file or directory with the same name exists, find a new name
@@ -103,7 +118,7 @@ process_source() {
             ((count++))
         done
         
-        if mv "$src" "$new_dest_path"; then
+        if mv -- "$src" "$new_dest_path"; then
             echo "Moved file '$src' to $new_dest_path"
             return 0
         else
@@ -112,7 +127,7 @@ process_source() {
         fi
         
     elif [ -d "$src" ]; then
-        base=$(basename "$src")
+        base=$(basename -- "$src")
         new_dest_path="$dest/$base"
         
         # If a file or directory with the same name exists, find a new name
@@ -122,7 +137,7 @@ process_source() {
             ((count++))
         done
         
-        if mv "$src" "$new_dest_path"; then
+        if mv -- "$src" "$new_dest_path"; then
             echo "Moved directory '$src' to $new_dest_path"
             return 0
         else
@@ -142,9 +157,9 @@ failure_count=0
 
 for src in "${sources[@]}"; do
     if process_source "$src" "$dest"; then
-        ((success_count++))
+        ((success_count+=1))
     else
-        ((failure_count++))
+        ((failure_count+=1))
     fi
 done
 
