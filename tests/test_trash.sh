@@ -51,6 +51,12 @@ echo "y" > "$src_dir/b.txt"
 assert_file "$dest_dir/a.txt"
 assert_file "$dest_dir/b.txt"
 
+# Single directory with no destination should use default trash
+single_dir="$src_dir/single-dir"
+mkdir -p "$single_dir"
+HOME="$workdir/home" "$trash_script" "$single_dir" >/dev/null
+assert_dir "$workdir/home/.trash/single-dir"
+
 # Missing source should fail
 if "$trash_script" "$src_dir/does-not-exist" "$dest_dir" >/dev/null 2>&1; then
     fail "Expected missing source to fail"

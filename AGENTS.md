@@ -10,7 +10,7 @@ Technical notes for automated agents working on this repository.
 - Usage: `./trash <source>... [destination_directory]`
 - Usage: `./trash <source>... -d destination_directory`
 - `-h`/`--help` prints usage and exits.
-- If the last argument is an existing directory, it is treated as the destination and all preceding arguments are sources.
+- If more than one source is provided and the last argument is an existing directory, it is treated as the destination and all preceding arguments are sources.
 - If no destination is provided, the script uses `~/.trash` and creates it if missing.
 - If a destination is provided, it must already exist.
 - `-d` explicitly sets the destination directory.

@@ -74,7 +74,7 @@ if [ -n "$specified_dest" ]; then
 else
     last_index=$((${#sources[@]} - 1))
     last_source="${sources[$last_index]}"
-    if [ -d "$last_source" ]; then
+    if [ ${#sources[@]} -gt 1 ] && [ -d "$last_source" ]; then
         dest="$last_source"
         unset 'sources[$last_index]'
     else
