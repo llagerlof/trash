@@ -21,63 +21,100 @@ add_suffix_before_extension() {
 }
 
 # Main script starts here
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+if [ "$#" -lt 1 ]; then
     echo "Trash 1.1.1"
-    echo "Usage: $0 <source> [destination_directory|~/.trash]"
+    echo "Usage: $0 <source>... [destination_directory]"
+    echo "       $0 -h|--help"
     exit 1
 fi
 
-src=$1
-if [ "$#" -eq 2 ]; then
-    dest=$2
-else
-    # Use ~/.trash as default destination
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "Trash 1.1.1"
+    echo "Usage: $0 <source>... [destination_directory]"
+    echo "Moves files/directories to a destination without overwriting."
+    echo "If destination is omitted, defaults to ~/.trash."
+    exit 0
+fi
+
+dest=""
+if [ "$#" -ge 2 ]; then
+    last_arg="${!#}"
+    if [ -d "$last_arg" ]; then
+        dest="$last_arg"
+        set -- "${@:1:$(($#-1))}"
+    fi
+fi
+
+if [ -z "$dest" ]; then
     dest="${HOME}/.trash"
-    # Create the default trash directory if it doesn't exist
     if [ ! -d "$dest" ]; then
-        mkdir -p "$dest"
+        mkdir -p "$dest" || { echo "Failed to create default trash directory at $dest"; exit 1; }
         echo "Created default trash directory at $dest"
     fi
 fi
 
-# Check if destination directory exists
 if [ ! -d "$dest" ]; then
     echo "Destination directory does not exist."
     exit 1
 fi
 
-# Check if the source is a file or a directory
-if [ -f "$src" ]; then
-    base=$(basename "$src")
-    new_dest_path="$dest/$base"
+for src in "$@"; do
+    if [ ! -e "$src" ] && [ ! -L "$src" ]; then
+        echo "Source does not exist: $src"
+        exit 1
+    fi
 
-    # If a file or directory with the same name exists, find a new name
-    count=2
-    while [ -e "$new_dest_path" ]; do
-        new_base=$(add_suffix_before_extension "$base" "$count")
-        new_dest_path="$dest/$new_base"
-        ((count++))
-    done
+    if [ -L "$src" ]; then
+        base=$(basename "$src")
+        new_dest_path="$dest/$base"
+        count=2
+        while [ -e "$new_dest_path" ] || [ -L "$new_dest_path" ]; do
+            new_base=$(add_suffix_before_extension "$base" "$count")
+            new_dest_path="$dest/$new_base"
+            ((count++))
+        done
+        mv -- "$src" "$new_dest_path" || { echo "Failed to move: $src"; exit 1; }
+        echo "Moved to $new_dest_path"
+        continue
+    fi
 
-    mv "$src" "$new_dest_path"
+    if [ -d "$src" ]; then
+        dest_real=$(cd "$dest" && pwd -P)
+        src_parent=$(cd "$(dirname "$src")" && pwd -P)
+        src_real="$src_parent/$(basename "$src")"
+        case "$dest_real" in
+            "$src_real"|"$src_real"/*)
+                echo "Refusing to move a directory into itself: $src"
+                exit 1
+                ;;
+        esac
+    fi
 
-elif [ -d "$src" ]; then
-    base=$(basename "$src")
-    new_dest_path="$dest/$base"
+    if [ -f "$src" ]; then
+        base=$(basename "$src")
+        new_dest_path="$dest/$base"
+        count=2
+        while [ -e "$new_dest_path" ] || [ -L "$new_dest_path" ]; do
+            new_base=$(add_suffix_before_extension "$base" "$count")
+            new_dest_path="$dest/$new_base"
+            ((count++))
+        done
+        mv -- "$src" "$new_dest_path" || { echo "Failed to move: $src"; exit 1; }
+        echo "Moved to $new_dest_path"
 
-    # If a file or directory with the same name exists, find a new name
-    count=2
-    while [ -e "$new_dest_path" ]; do
-        new_dest_path="$dest/${base}-${count}"
-        ((count++))
-    done
+    elif [ -d "$src" ]; then
+        base=$(basename "$src")
+        new_dest_path="$dest/$base"
+        count=2
+        while [ -e "$new_dest_path" ] || [ -L "$new_dest_path" ]; do
+            new_dest_path="$dest/${base}-${count}"
+            ((count++))
+        done
+        mv -- "$src" "$new_dest_path" || { echo "Failed to move: $src"; exit 1; }
+        echo "Moved to $new_dest_path"
 
-    mv "$src" "$new_dest_path"
-
-else
-    echo "The source is neither a file nor a directory."
-    exit 1
-fi
-
-echo "Moved to $new_dest_path"
-
+    else
+        echo "The source is neither a file, directory, nor symlink: $src"
+        exit 1
+    fi
+done

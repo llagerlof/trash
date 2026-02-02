@@ -17,21 +17,24 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 ## Usage
 
 ```bash
-./trash <source> [destination_directory]
+./trash <source>... [destination_directory]
+./trash -h|--help
 ```
 
 ### Parameters
 
-- `source`: The file or directory you want to move
-- `destination_directory`: (Optional) The directory where you want to move the source
+- `source`: One or more files/directories (and symlinks) you want to move
+- `destination_directory`: (Optional) The directory where you want to move the sources
   - If not provided, the script will use `~/.trash` in your home directory
   - If `~/.trash` does not exist, it will be created automatically
+  - If provided, it must already exist
+  - If the last argument is an existing directory, it is treated as the destination
 
 ### Examples
 
 ```bash
-# Move a file to a specific location
-./trash document.txt ~/old/
+# Move files to a specific location
+./trash document.txt photo.jpg ~/old/
 
 # Move a directory to a specific location
 ./trash project_folder ~/archived/
@@ -49,6 +52,9 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
   - For files: Adds a numerical suffix before the extension (e.g., document-2.txt)
   - For directories: Adds a numerical suffix to the directory name (e.g., project_folder-2)
 - The script will increment the suffix (2, 3, 4, etc.) until it finds an available name
+- Symlinks are moved as symlinks
+- The script refuses to move a directory into itself or one of its subdirectories
+- Sources that do not exist cause a non-zero exit
 
 ## Exit Codes
 
