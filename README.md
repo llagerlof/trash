@@ -18,6 +18,7 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 
 ```bash
 ./trash <source>... [destination_directory]
+./trash <source>... -d destination_directory
 ./trash -h|--help
 ```
 
@@ -29,6 +30,7 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
   - If `~/.trash` does not exist, it will be created automatically
   - If provided, it must already exist
   - If the last argument is an existing directory, it is treated as the destination
+- `-d destination_directory`: (Optional) Explicitly sets the destination directory
 
 ### Examples
 
@@ -38,6 +40,9 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 
 # Move a directory to a specific location
 ./trash project_folder ~/archived/
+
+# Move files to a specific location using -d
+./trash document.txt photo.jpg -d ~/old/
 
 # Move a file to the default trash directory (~/.trash)
 ./trash document.txt
