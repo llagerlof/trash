@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Trash 1.3.0
-#
+VERSION="1.5.0"
+
 # A script that safely moves files and directories to a destination folder
 # without overwriting existing items.
 # Supports multiple files or directories as arguments.
@@ -10,6 +10,13 @@
 add_suffix_before_extension() {
     local filename=$1
     local suffix=$2
+    local extension
+
+    if [[ "$filename" = .* && "${filename#*.}" != *.* ]]; then
+        echo "${filename}-${suffix}"
+        return
+    fi
+
     extension="${filename##*.}"
     filename="${filename%.*}"
     if [ "$filename" = "$extension" ]; then
@@ -22,12 +29,17 @@ add_suffix_before_extension() {
 }
 
 usage() {
-    echo "Trash 1.3.0"
+    echo "Trash $VERSION"
     echo "Usage: $0 <source>... [destination_directory]"
     echo "       $0 <source>... -d destination_directory"
     echo "       $0 -h|--help"
+    echo "       $0 --version"
     echo "Moves files/directories to a destination without overwriting."
     echo "If destination is omitted, defaults to ~/.trash."
+}
+
+version() {
+    echo "Trash $VERSION"
 }
 
 # Main script starts here
@@ -38,6 +50,11 @@ fi
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
+    exit 0
+fi
+
+if [ "$1" = "--version" ]; then
+    version
     exit 0
 fi
 

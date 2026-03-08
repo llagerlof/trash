@@ -23,6 +23,10 @@ assert_symlink() {
 workdir="$(mktemp -d)"
 trap 'rm -rf "$workdir"' EXIT
 
+# Version output
+version_output="$($trash_script --version)"
+[ "$version_output" = "Trash 1.5.0" ] || fail "Expected version output to be 'Trash 1.5.0'"
+
 # File conflict with extension handling
 src_dir="$workdir/src"
 dest_dir="$workdir/dest"
@@ -32,6 +36,18 @@ echo "hello" > "$dest_dir/report.tar.gz"
 echo "data" > "$src_dir/report.tar.gz"
 "$trash_script" "$src_dir/report.tar.gz" "$dest_dir" >/dev/null
 assert_file "$dest_dir/report.tar-2.gz"
+
+# File conflict should continue escalating suffixes
+echo "hello again" > "$dest_dir/report.tar-2.gz"
+echo "data again" > "$src_dir/report.tar.gz"
+"$trash_script" "$src_dir/report.tar.gz" "$dest_dir" >/dev/null
+assert_file "$dest_dir/report.tar-3.gz"
+
+# Dotfile conflict should preserve the leading dot
+echo "original" > "$dest_dir/.bashrc"
+echo "replacement" > "$src_dir/.bashrc"
+"$trash_script" "$src_dir/.bashrc" "$dest_dir" >/dev/null
+assert_file "$dest_dir/.bashrc-2"
 
 # Directory conflict
 mkdir -p "$src_dir/project"
@@ -43,6 +59,12 @@ assert_dir "$dest_dir/project-2"
 ln -s "$dest_dir/project-2" "$src_dir/link"
 "$trash_script" "$src_dir/link" "$dest_dir" >/dev/null
 assert_symlink "$dest_dir/link"
+
+# Symlink collisions should use the same suffix behavior
+ln -s "$dest_dir/project" "$dest_dir/.env"
+ln -s "$dest_dir/project-2" "$src_dir/.env"
+"$trash_script" "$src_dir/.env" "$dest_dir" >/dev/null
+assert_symlink "$dest_dir/.env-2"
 
 # Multi-source with destination
 echo "x" > "$src_dir/a.txt"

@@ -20,11 +20,13 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 ./trash <source>... [destination_directory]
 ./trash <source>... -d destination_directory
 ./trash -h|--help
+./trash --version
 ```
 
 ### Parameters
 
 - `source`: One or more files/directories (and symlinks) you want to move
+  - Filenames that look like options must be passed with a path prefix, for example `./-h`, `./--help`, or `./-d`
 - `destination_directory`: (Optional) The directory where you want to move the sources
   - If not provided, the script will use `~/.trash` in your home directory
   - If `~/.trash` does not exist, it will be created automatically
@@ -49,6 +51,14 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 
 # Move a directory to the default trash directory (~/.trash)
 ./trash project_folder
+
+# Move files whose names look like options by prefixing the path
+./trash ./-h
+./trash ./--help
+./trash ./-d /some/destination
+
+# Show the current version
+./trash --version
 ```
 
 ## Behavior
@@ -60,8 +70,9 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 - Symlinks are moved as symlinks
 - The script refuses to move a directory into itself or one of its subdirectories
 - Sources that do not exist cause a non-zero exit
+- If some sources move successfully and others fail, the script still exits non-zero
 
 ## Exit Codes
 
 - 0: Success
-- 1: Invalid arguments or errors
+- 1: Invalid arguments, move failures, or mixed-success runs with at least one failure
