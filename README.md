@@ -37,28 +37,28 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 ### Examples
 
 ```bash
+# Move a file to the default trash directory (~/.trash)
+trash document.txt
+
 # Move files to a specific location
-./trash document.txt photo.jpg ~/old/
+trash document.txt photo.jpg ~/old/
 
 # Move a directory to a specific location
-./trash project_folder ~/archived/
+trash project_folder ~/archived/
 
 # Move files to a specific location using -d
-./trash document.txt photo.jpg -d ~/old/
-
-# Move a file to the default trash directory (~/.trash)
-./trash document.txt
+trash document.txt photo.jpg -d ~/old/
 
 # Move a directory to the default trash directory (~/.trash)
-./trash project_folder
+trash project_folder
 
 # Move files whose names look like options by prefixing the path
-./trash ./-h
-./trash ./--help
-./trash ./-d /some/destination
+trash ./-h
+trash ./--help
+trash ./-d /some/destination
 
 # Show the current version
-./trash --version
+trash --version
 ```
 
 ## Behavior
