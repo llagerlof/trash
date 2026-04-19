@@ -14,6 +14,61 @@ This utility works similar to a "trash" or "safe move" operation, ensuring that 
 - Uses a default trash location if no destination is specified
 - Provides informative error messages
 
+## Installation
+
+The script name is `trash`.
+
+If you install it to `~/.local/bin`, make sure that directory is on your `PATH`.
+
+### Install only for the current user
+
+#### Option 1: Clone the repository and create a symlink
+
+Clone the repository into `~/repos/trash` or `~/repositories/trash`, make the script executable, and symlink it into `~/.local/bin`:
+
+```bash
+mkdir -p ~/repos ~/.local/bin
+git clone https://github.com/llagerlof/trash.git ~/repos/trash
+chmod +x ~/repos/trash/trash
+ln -sf ~/repos/trash/trash ~/.local/bin/trash
+```
+
+If you prefer `~/repositories`, replace `~/repos/trash` with `~/repositories/trash`.
+
+#### Option 2: Download the script directly
+
+Download the script into `~/.local/bin` and make it executable:
+
+```bash
+mkdir -p ~/.local/bin
+curl -fsSL https://raw.githubusercontent.com/llagerlof/trash/main/trash -o ~/.local/bin/trash
+chmod +x ~/.local/bin/trash
+```
+
+### Install for everyone
+
+#### Option 3: Clone the repository and create a system-wide symlink
+
+Clone the repository into a normal user's home directory such as `~/repos/trash` or `~/repositories/trash`, make the script executable, and symlink it into `/usr/local/bin`:
+
+```bash
+mkdir -p ~/repos
+git clone https://github.com/llagerlof/trash.git ~/repos/trash
+chmod +x ~/repos/trash/trash
+sudo ln -sf ~/repos/trash/trash /usr/local/bin/trash
+```
+
+Run the `git clone` and `chmod` commands as a normal user, not as `root`. If you prefer `~/repositories`, replace `~/repos/trash` with `~/repositories/trash`.
+
+#### Option 4: Download the script directly system-wide
+
+Download the script into `/usr/local/bin` and make it executable:
+
+```bash
+sudo curl -fsSL https://raw.githubusercontent.com/llagerlof/trash/main/trash -o /usr/local/bin/trash
+sudo chmod +x /usr/local/bin/trash
+```
+
 ## Usage
 
 ```bash
