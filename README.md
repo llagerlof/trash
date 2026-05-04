@@ -76,6 +76,7 @@ sudo chmod +x /usr/local/bin/trash
 ./trash <source>... -d destination_directory
 ./trash -h|--help
 ./trash --version
+./trash --print-completion bash
 ```
 
 ### Parameters
@@ -88,6 +89,7 @@ sudo chmod +x /usr/local/bin/trash
   - If provided, it must already exist
   - If the last argument is an existing directory, it is treated as the destination
 - `-d destination_directory`: (Optional) Explicitly sets the destination directory
+- `--print-completion bash`: Prints a Bash completion definition. This is useful on systems where `bash-completion` auto-loads completions for commands named `trash`.
 
 ### Examples
 
@@ -114,6 +116,9 @@ trash ./-d /some/destination
 
 # Show the current version
 trash --version
+
+# Print the Bash completion definition
+trash --print-completion bash
 ```
 
 ## Behavior

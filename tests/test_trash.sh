@@ -25,7 +25,17 @@ trap 'rm -rf "$workdir"' EXIT
 
 # Version output
 version_output="$($trash_script --version)"
-[ "$version_output" = "Trash 1.5.0" ] || fail "Expected version output to be 'Trash 1.5.0'"
+[ "$version_output" = "Trash 1.5.1" ] || fail "Expected version output to be 'Trash 1.5.1'"
+
+# Bash completion output should be compatible with bash-completion fallback loaders
+completion_output="$($trash_script --print-completion bash)"
+case "$completion_output" in
+    *"complete -o filenames -F _trash_complete trash"*) ;;
+    *) fail "Expected bash completion output to define trash completion" ;;
+esac
+
+completion_spec="$(bash -lc 'eval -- "$("$1" --print-completion bash)"; complete -p trash' bash "$trash_script")"
+[ "$completion_spec" = "complete -o filenames -F _trash_complete trash" ] || fail "Expected completion spec to be registered for trash"
 
 # File conflict with extension handling
 src_dir="$workdir/src"

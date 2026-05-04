@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.5.0"
+VERSION="1.5.1"
 
 # A script that safely moves files and directories to a destination folder
 # without overwriting existing items.
@@ -30,16 +30,49 @@ add_suffix_before_extension() {
 
 usage() {
     echo "Trash $VERSION"
-    echo "Usage: $0 <source>... [destination_directory]"
-    echo "       $0 <source>... -d destination_directory"
-    echo "       $0 -h|--help"
-    echo "       $0 --version"
-    echo "Moves files/directories to a destination without overwriting."
-    echo "If destination is omitted, defaults to ~/.trash."
+    echo "This cli program moves files/directories to ~/.trash/"
+    echo "If a destination is specified, move the item to that destination instead of ~/.trash/"
+    echo "> Usage example:"
+    echo "  $ trash oldfile.txt"
+    echo "  $ trash /the/full/path/that_undesired_directory"
+    echo "> Syntax:"
+    echo "  $ trash <source>... [destination_directory]"
+    echo "  $ trash <source>... -d destination_directory"
+    echo "  $ trash -h|--help"
+    echo "  $ trash --version"
 }
 
 version() {
     echo "Trash $VERSION"
+}
+
+print_bash_completion() {
+    cat <<'EOF'
+_trash_complete() {
+    local cur prev
+
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev=""
+    if (( COMP_CWORD > 0 )); then
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+    fi
+
+    if [[ "$prev" == "-d" ]]; then
+        COMPREPLY=( $(compgen -d -- "$cur") )
+        return 0
+    fi
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-d -h --help --version --print-completion" -- "$cur") )
+        return 0
+    fi
+
+    COMPREPLY=( $(compgen -f -- "$cur") )
+}
+
+complete -o filenames -F _trash_complete trash
+EOF
 }
 
 # Main script starts here
@@ -56,6 +89,21 @@ fi
 if [ "$1" = "--version" ]; then
     version
     exit 0
+fi
+
+if [ "$1" = "--print-completion" ]; then
+    if [ "$#" -ne 2 ]; then
+        echo "Error: --print-completion requires a shell argument" >&2
+        exit 1
+    fi
+
+    if [ "$2" = "bash" ]; then
+        print_bash_completion
+        exit 0
+    fi
+
+    echo "Error: Unsupported shell '$2'" >&2
+    exit 1
 fi
 
 # Parse arguments
